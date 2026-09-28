@@ -1,0 +1,16 @@
+{
+  "account": "TFSA",
+  "base_currency": "CAD",
+  "fx_fee_pct": 1.5,
+  "risk_per_trade_pct": 1.0,
+  "line_of_credit_apr_pct": 4.95,
+  "holdings": [
+    {"symbol": "CEF.TO",  "name": "Sprott Physical Gold & Silver", "shares": 25.3083, "currency": "CAD"},
+    {"symbol": "SCHD",    "name": "Schwab US Dividend Equity",      "shares": 14.4268, "currency": "USD"},
+    {"symbol": "SOFI",    "name": "SoFi Technologies",              "shares": 66.8854, "currency": "USD"},
+    {"symbol": "URA",     "name": "Global X Uranium",               "shares": 6.1318,  "currency": "USD"},
+    {"symbol": "VDY.TO",  "name": "Vanguard FTSE Cdn High Div",     "shares": 11.5045, "currency": "CAD"},
+    {"symbol": "VFV.TO",  "name": "Vanguard S&P 500 (CAD)",         "shares": 7.9353,  "currency": "CAD"},
+    {"symbol": "XEQT.TO", "name": "iShares All-Equity ETF",         "shares": 86.2253, "currency": "CAD"}
+  ]
+}
