@@ -1,0 +1,437 @@
+<title>Trade Ticket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: an order ticket on the left (inputs), the verdict and price ladder on the right, journal below. Stacks to one column on phones. */
+:root {
+  --bg: #f3f5f7;
+  --panel: #ffffff;
+  --ink: #16212b;
+  --muted: #5d6b78;
+  --line: #d9dfe5;
+  --accent: #1f6feb;
+  --accent-soft: #e4edfd;
+  --gain: #1a7f4b;
+  --gain-soft: #e3f4ea;
+  --loss: #c0392b;
+  --loss-soft: #fbe7e4;
+  --warn: #9a6200;
+  --warn-soft: #fdf2dc;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1418; --panel: #161e24; --ink: #e6edf2; --muted: #93a1ad; --line: #2a353e;
+    --accent: #5b9dff; --accent-soft: #1b2a40; --gain: #4cc38a; --gain-soft: #13291e;
+    --loss: #ff7b6b; --loss-soft: #33191a; --warn: #f0b44c; --warn-soft: #2e2413; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1418; --panel: #161e24; --ink: #e6edf2; --muted: #93a1ad; --line: #2a353e;
+  --accent: #5b9dff; --accent-soft: #1b2a40; --gain: #4cc38a; --gain-soft: #13291e;
+  --loss: #ff7b6b; --loss-soft: #33191a; --warn: #f0b44c; --warn-soft: #2e2413; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; padding: 20px 16px 40px; }
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+header h1 { font-size: 26px; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+header p { margin: 4px 0 0; color: var(--muted); max-width: 70ch; }
+.grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0; font-weight: 600; }
+fieldset { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+fieldset legend { grid-column: 1 / -1; font-weight: 600; font-size: 14px; margin-bottom: 4px; padding: 0; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); min-width: 0; }
+label.full { grid-column: 1 / -1; }
+input, select { font: 500 15px var(--font-num); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100%; min-width: 0; }
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hint { font-size: 12px; color: var(--muted); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+button { font: 600 14px var(--font-body); border-radius: 6px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.status { font-size: 12px; color: var(--muted); }
+.status.err { color: var(--loss); }
+.verdict { border-radius: 8px; padding: 12px 14px; font-weight: 600; display: flex; flex-direction: column; gap: 2px; }
+.verdict small { font-weight: 400; color: var(--ink); opacity: 0.85; }
+.verdict.good { background: var(--gain-soft); color: var(--gain); }
+.verdict.meh { background: var(--warn-soft); color: var(--warn); }
+.verdict.bad { background: var(--loss-soft); color: var(--loss); }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 480px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stat { border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat span { font-size: 12px; color: var(--muted); }
+.stat b { font: 600 17px var(--font-num); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pos { color: var(--gain); } .neg { color: var(--loss); }
+.ladder-wrap { overflow-x: auto; }
+svg text { font-family: var(--font-num); font-size: 12px; }
+.plan { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.plan li { padding-left: 2px; }
+.plan b { font-family: var(--font-num); }
+.warns { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.warns li { background: var(--warn-soft); color: var(--warn); border-radius: 6px; padding: 6px 10px; font-size: 13px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; font-size: 12px; }
+td.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.table-wrap { overflow-x: auto; }
+.pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.04em; }
+.pill.open { background: var(--accent-soft); color: var(--accent); }
+.pill.win { background: var(--gain-soft); color: var(--gain); }
+.pill.loss { background: var(--loss-soft); color: var(--loss); }
+.closer { display: flex; gap: 6px; }
+.closer input { width: 90px; padding: 4px 6px; font-size: 13px; }
+.closer button { padding: 4px 10px; font-size: 13px; }
+.empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+footer { color: var(--muted); font-size: 12px; }
+@media (prefers-reduced-motion: no-preference) { .stat b, .verdict { transition: color .2s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Trade Ticket</h1>
+    <p>Plan a trade before you place it: where you buy, where you get out if you're wrong, where you take profit, and what you actually keep after fees and interest. Save it as a paper trade to practise with fake money.</p>
+  </header>
+
+  <div class="grid">
+    <form class="panel" id="ticket" autocomplete="off">
+      <h2>Order ticket</h2>
+
+      <fieldset>
+        <legend>The stock</legend>
+        <label>Ticker<input id="symbol" value="SOFI"></label>
+        <label>Trades in
+          <select id="currency"><option value="USD">USD (US stock)</option><option value="CAD">CAD (TSX)</option></select>
+        </label>
+        <div class="full row">
+          <button type="button" id="fetchBtn">Fill live price &amp; ATR</button>
+          <span class="status" id="fetchStatus">Uses your Twelve Data connector.</span>
+        </div>
+        <label>Current price<input id="price" type="number" step="0.01" value="16.04"></label>
+        <label>ATR (avg daily move, $)<input id="atr" type="number" step="0.01" value="0.70"></label>
+        <div class="full row">
+          <button type="button" id="suggestBtn">Suggest stop &amp; target from ATR</button>
+          <span class="hint">Stop 1.5 ATR below, target 3 ATR above (2:1).</span>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Your three prices</legend>
+        <label>Buy at (entry)<input id="entry" type="number" step="0.01" value="16.50"></label>
+        <label>Stop-loss (get out)<input id="stop" type="number" step="0.01" value="15.20"></label>
+        <label>Profit target (sell)<input id="target" type="number" step="0.01" value="17.50"></label>
+        <label>Profit you want ($)<input id="goal" type="number" step="1" value="50"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Money</legend>
+        <label>Account value (CAD)<input id="account" type="number" step="100" value="10300"></label>
+        <label>Max risk per trade (%)<input id="riskPct" type="number" step="0.25" value="1"></label>
+        <label>Max to invest (CAD)<input id="maxCost" type="number" step="50" value="500"></label>
+        <label>USD → CAD rate<input id="fx" type="number" step="0.001" value="1.417"></label>
+        <label>FX fee each way (%)<input id="fxFee" type="number" step="0.1" value="1.5"></label>
+        <label>Borrowed (CAD)<input id="borrowed" type="number" step="50" value="500"></label>
+        <label>Loan rate (APR %)<input id="apr" type="number" step="0.05" value="4.95"></label>
+        <label>Days you'll hold<input id="days" type="number" step="1" value="30"></label>
+      </fieldset>
+      <p class="hint">Example values: SOFI on Sept 28, 2026, your TFSA size and your 4.95% line of credit. Change any number and everything updates.</p>
+    </form>
+
+    <section class="panel" aria-live="polite">
+      <h2>What happens</h2>
+      <div class="verdict" id="verdict"></div>
+      <div class="stats" id="stats"></div>
+      <div class="ladder-wrap"><svg id="ladder" viewBox="0 0 560 300" width="100%" role="img" aria-label="Price ladder"></svg></div>
+      <div>
+        <h2 style="margin-bottom:8px">When to take profit</h2>
+        <ol class="plan" id="plan"></ol>
+      </div>
+      <ul class="warns" id="warns"></ul>
+      <div class="row">
+        <label class="full" style="flex:1 1 220px">Why this trade? (for your journal)<input id="reason" placeholder="e.g. held $16 support, closed above $16.50"></label>
+        <button type="button" class="primary" id="saveBtn" style="align-self:flex-end">Save as paper trade</button>
+      </div>
+      <span class="status" id="saveStatus"></span>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Paper trading journal</h2>
+    <div class="stats" id="journalStats"></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Opened</th><th>Ticker</th><th>Shares</th><th>Entry</th><th>Stop</th><th>Target</th><th>Status</th><th>P&amp;L</th><th>Why</th></tr></thead>
+      <tbody id="journal"><tr><td colspan="9" class="empty">No paper trades yet. Plan one above and press "Save as paper trade". When it hits your stop or target in real life, enter the exit price here to close it.</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <footer>For practice and education, not financial advice. Paper trades use no real money. Prices from your Twelve Data connector may be delayed.</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const num = (id) => parseFloat($(id).value) || 0;
+const money = (x, cur) => (x < 0 ? "−" : "") + "$" + Math.abs(x).toFixed(2) + (cur ? " " + cur : "");
+const signed = (x, cur) => (x >= 0 ? "+" : "") + money(x, cur);
+
+function compute() {
+  const cur = $("currency").value, isUS = cur === "USD";
+  const fx = isUS ? num("fx") || 1 : 1;               // CAD per 1 unit of trade currency
+  const entry = num("entry"), stop = num("stop"), target = num("target");
+  const accountT = num("account") / fx, maxCostT = num("maxCost") / fx;
+  const fee = isUS ? num("fxFee") / 100 : 0;
+  const interestCAD = num("borrowed") * num("apr") / 100 * num("days") / 365;
+  const interestT = interestCAD / fx;
+  const valid = stop > 0 && stop < entry && entry < target;
+  if (!valid) return { valid, cur };
+  const perRisk = entry - stop;
+  const byRisk = Math.floor(accountT * num("riskPct") / 100 / perRisk);
+  const byCash = Math.floor(maxCostT / entry);
+  const shares = Math.max(0, Math.min(byRisk, byCash));
+  const cost = shares * entry;
+  const fees = cost * fee + shares * target * fee;     // in and out
+  const risk = shares * perRisk, reward = shares * (target - entry);
+  const netWin = reward - fees - interestT;
+  const netLoss = -risk - cost * fee - shares * stop * fee - interestT;
+  // price where you break even after fees and interest
+  const breakeven = shares ? (cost * (1 + fee) + interestT) / (shares * (1 - fee)) : 0;
+  // price needed for the profit goal (goal entered in CAD)
+  const goalT = num("goal") / fx;
+  const goalPrice = shares ? (cost * (1 + fee) + interestT + goalT) / (shares * (1 - fee)) : 0;
+  const oneR = entry + perRisk;
+  return { valid, cur, isUS, fx, entry, stop, target, shares, byRisk, byCash, cost, fees, risk, reward,
+           netWin, netLoss, breakeven, goalPrice, oneR, rr: (target - entry) / perRisk, interestT };
+}
+
+function render() {
+  const r = compute();
+  const v = $("verdict");
+  if (!r.valid) {
+    v.className = "verdict bad";
+    v.innerHTML = "Check your prices<small>For a buy, the stop must be below the entry and the target above it.</small>";
+    $("stats").innerHTML = ""; $("plan").innerHTML = ""; $("warns").innerHTML = ""; $("ladder").innerHTML = "";
+    return;
+  }
+  const c = r.cur, cadNote = r.isUS ? ` (≈ ${money(r.netWin * r.fx, "CAD")})` : "";
+  if (r.shares === 0) {
+    v.className = "verdict bad";
+    v.innerHTML = "Position too small<small>Your risk limit or max-to-invest doesn't cover even one share at this entry.</small>";
+  } else if (r.rr >= 2 && r.netWin > 0) {
+    v.className = "verdict good";
+    v.innerHTML = `Reward:risk ${r.rr.toFixed(1)} to 1. Worth considering.<small>You risk ${money(-r.netLoss, c)} to make ${money(r.netWin, c)}${cadNote} after costs.</small>`;
+  } else if (r.netWin > 0) {
+    v.className = "verdict meh";
+    v.innerHTML = `Reward:risk ${r.rr.toFixed(1)} to 1. Weak setup.<small>You risk ${money(-r.netLoss, c)} to make ${money(r.netWin, c)}${cadNote}. Most traders want 2 to 1 or better.</small>`;
+  } else {
+    v.className = "verdict bad";
+    v.innerHTML = `Fees and interest eat the whole gain<small>Even if it hits the target you keep ${money(r.netWin, c)}.</small>`;
+  }
+
+  const stat = (label, value, cls = "") => `<div class="stat"><span>${label}</span><b class="${cls}">${value}</b></div>`;
+  $("stats").innerHTML = [
+    stat("Shares to buy", r.shares + (r.shares === r.byCash && r.byCash < r.byRisk ? " <span class='hint'>(cash cap)</span>" : "")),
+    stat("Money in", money(r.cost, c)),
+    stat("Reward : risk", r.rr.toFixed(2) + " : 1", r.rr >= 2 ? "pos" : "neg"),
+    stat("Keep if target hit", signed(r.netWin, c), r.netWin >= 0 ? "pos" : "neg"),
+    stat("Lose if stopped out", signed(r.netLoss, c), "neg"),
+    stat("FX fees + interest", money(r.fees + r.interestT, c)),
+  ].join("");
+
+  const goalReach = r.goalPrice <= r.target;
+  const pct = (p) => ((p / r.entry - 1) * 100).toFixed(1) + "%";
+  $("plan").innerHTML = [
+    `<li>Buy ${r.shares} shares at <b>${r.entry.toFixed(2)}</b>. Place the stop-loss order at <b>${r.stop.toFixed(2)}</b> right away, not later.</li>`,
+    `<li>At <b>${r.oneR.toFixed(2)}</b> (+${pct(r.oneR)}, one "R" up) move your stop to <b>${r.breakeven.toFixed(2)}</b>. From then on the worst case is roughly breaking even.</li>`,
+    `<li>At <b>${r.target.toFixed(2)}</b> (+${pct(r.target)}) sell. Or sell half there and trail the rest with a stop about one ATR below the price.</li>`,
+    goalReach
+      ? `<li>Your ${money(num("goal"), "CAD")} goal is reached at <b>${r.goalPrice.toFixed(2)}</b> (+${pct(r.goalPrice)}), inside your target. Take it when it comes.</li>`
+      : `<li>Your ${money(num("goal"), "CAD")} goal needs <b>${r.goalPrice.toFixed(2)}</b> (+${pct(r.goalPrice)}), beyond your target. With ${r.shares} shares the target only gets you ${signed(r.netWin * r.fx, "CAD")}. Lower the goal or accept that this trade won't reach it; don't widen the stop to buy more shares.</li>`,
+    `<li>If ${num("days")} days pass and neither level is hit, close it anyway and reassess. The plan's timing was wrong.</li>`,
+  ].join("");
+
+  const w = [];
+  const price = num("price"), atr = num("atr");
+  if (price && Math.abs(r.entry / price - 1) > 0.05) w.push(`Entry is ${pct(price) === "0.0%" ? "" : ((r.entry / price - 1) * 100).toFixed(1) + "% "}away from the current price of ${price.toFixed(2)}.`);
+  if (atr && r.entry - r.stop < atr) w.push(`Stop is less than one day's normal move (ATR ${atr.toFixed(2)}) away. Normal noise can stop you out.`);
+  if (atr && r.target - r.entry > atr * 15) w.push(`Target is more than 15 average days of movement away. Unlikely within a month.`);
+  if (r.isUS && num("fxFee") > 0) w.push(`Converting CAD to USD and back costs ${money(r.fees, c)} on this trade. A USD account avoids it.`);
+  if (num("borrowed") > 0) w.push(`Borrowed money in a TFSA: interest isn't tax-deductible, and a loss still has to be repaid.`);
+  $("warns").innerHTML = w.map((x) => `<li>${x}</li>`).join("");
+
+  drawLadder(r, price);
+}
+
+function drawLadder(r, price) {
+  const levels = [
+    { p: r.stop, label: "Stop", cls: "var(--loss)" },
+    { p: r.entry, label: "Buy", cls: "var(--accent)" },
+    { p: r.breakeven, label: "Break-even", cls: "var(--muted)" },
+    { p: r.oneR, label: "+1R: move stop", cls: "var(--muted)" },
+    { p: r.target, label: "Target", cls: "var(--gain)" },
+  ];
+  if (r.goalPrice > 0) levels.push({ p: r.goalPrice, label: "Your $ goal", cls: "var(--warn)" });
+  if (price) levels.push({ p: price, label: "Now", cls: "var(--ink)" });
+  const ps = levels.map((l) => l.p);
+  const lo = Math.min(...ps), hi = Math.max(...ps), pad = (hi - lo) * 0.08 || 1;
+  const top = 18, bottom = 282, y = (p) => bottom - ((p - (lo - pad)) / ((hi + pad) - (lo - pad))) * (bottom - top);
+  // spread labels that would overlap
+  const sorted = levels.map((l) => ({ ...l, y: y(l.p) })).sort((a, b) => b.y - a.y);
+  let prev = Infinity;
+  sorted.forEach((l) => { l.ly = Math.min(l.y, prev - 16); prev = l.ly; });
+  const zoneLoss = `<rect x="150" y="${y(r.entry)}" width="40" height="${y(r.stop) - y(r.entry)}" fill="var(--loss-soft)" stroke="var(--loss)" stroke-width="1"/>`;
+  const zoneGain = `<rect x="150" y="${y(r.target)}" width="40" height="${y(r.entry) - y(r.target)}" fill="var(--gain-soft)" stroke="var(--gain)" stroke-width="1"/>`;
+  const lines = sorted.map((l) => `
+    <line x1="110" x2="230" y1="${l.y}" y2="${l.y}" stroke="${l.cls}" stroke-width="${l.label === 'Now' ? 1 : 2}" ${l.label === 'Now' || l.label.startsWith('Break') || l.label.startsWith('+1R') ? 'stroke-dasharray="4 3"' : ''}/>
+    <line x1="230" x2="250" y1="${l.y}" y2="${l.ly}" stroke="${l.cls}" stroke-width="1"/>
+    <text x="100" y="${l.y + 4}" text-anchor="end" fill="${l.cls}">${l.p.toFixed(2)}</text>
+    <text x="256" y="${l.ly + 4}" fill="${l.cls}">${l.label} ${l.p !== r.entry && l.label !== 'Now' ? '(' + ((l.p / r.entry - 1) * 100 >= 0 ? '+' : '') + ((l.p / r.entry - 1) * 100).toFixed(1) + '%)' : ''}</text>`).join("");
+  $("ladder").innerHTML = zoneLoss + zoneGain + lines;
+}
+
+// ---- live data through the Twelve Data connector ----
+function parseTD(payload) {
+  const text = typeof payload === "string" ? payload : payload && typeof payload.result === "string" ? payload.result : null;
+  if (!text) return null;
+  if (/^error|run out|upgrad/i.test(text)) throw new Error(text.split("\n")[0].slice(0, 160));
+  const [head, ...rows] = text.trim().split("\n");
+  const keys = head.split(";");
+  return rows.map((r) => Object.fromEntries(r.split(";").map((v, i) => [keys[i], v])));
+}
+const MCP_FIX = {
+  needs_reauth: "Reconnect Twelve Data in claude.ai Settings → Connectors.",
+  server_not_connected: "Add the Twelve Data connector in claude.ai Settings → Connectors.",
+  selection_required: "Choose which Twelve Data connector to use when claude.ai asks.",
+  not_in_manifest: "Live prices are turned off for this page. Type the price instead.",
+  blocked_by_policy: "Your organization blocks this connector here. Type the price instead.",
+};
+let mcp = null;
+(async () => {
+  try { mcp = await window.claude?.use?.("mcp"); } catch { mcp = null; }
+  if (!mcp) { $("fetchBtn").disabled = true; $("fetchStatus").textContent = "Live prices aren't available in this view. Type them in."; }
+})();
+
+$("fetchBtn").addEventListener("click", async () => {
+  if (!mcp) return;
+  const sym = $("symbol").value.trim().toUpperCase();
+  const cur = $("currency").value;
+  const args = cur === "CAD" ? { symbol: sym.replace(/\.TO$/, ""), exchange: "TSX" } : { symbol: sym };
+  const st = $("fetchStatus"); st.className = "status"; st.textContent = "Fetching…";
+  $("fetchBtn").disabled = true;
+  try {
+    const q = await mcp.callTool("Twelve Data", "get_quote", args);
+    const quote = parseTD(q.payload)?.[0];
+    if (!quote?.close) throw new Error("No quote returned for " + sym);
+    $("price").value = (+quote.close).toFixed(2);
+    let atrMsg = "";
+    try {
+      const a = await mcp.callTool("Twelve Data", "get_technical_indicator", { ...args, indicator: "ATR", time_period: 14, outputsize: 1 });
+      const atr = parseTD(a.payload)?.[0]?.atr;
+      if (atr) { $("atr").value = (+atr).toFixed(2); atrMsg = ", ATR " + (+atr).toFixed(2); }
+    } catch (e) { atrMsg = " (ATR unavailable: " + (e.message || e.code) + ")"; }
+    if (cur === "USD") {
+      try {
+        const f = await mcp.callTool("Twelve Data", "get_quote", { symbol: "USD/CAD" });
+        const rate = parseTD(f.payload)?.[0]?.close;
+        if (rate) $("fx").value = (+rate).toFixed(3);
+      } catch {}
+    }
+    st.textContent = `${quote.name || sym}: ${(+quote.close).toFixed(2)} (${quote.datetime})${atrMsg}`;
+    render();
+  } catch (e) {
+    st.className = "status err";
+    st.textContent = MCP_FIX[e.code] || (e.code === "server_unavailable" ? "Twelve Data didn't answer. Try again in a minute." : e.message || "Couldn't fetch the price.");
+  } finally { $("fetchBtn").disabled = false; }
+});
+
+$("suggestBtn").addEventListener("click", () => {
+  const price = num("price"), atr = num("atr");
+  if (!price || !atr) return;
+  $("entry").value = price.toFixed(2);
+  $("stop").value = (price - 1.5 * atr).toFixed(2);
+  $("target").value = (price + 3 * atr).toFixed(2);
+  render();
+});
+
+// ---- paper trading journal (shared db) ----
+let db = null, trades = [];
+function renderJournal() {
+  const body = $("journal");
+  if (!db) {
+    body.innerHTML = `<tr><td colspan="9" class="empty">The journal isn't available in this view.</td></tr>`;
+  } else if (!trades.length) {
+    body.innerHTML = `<tr><td colspan="9" class="empty">No paper trades yet. Plan one above and press "Save as paper trade". When it hits your stop or target in real life, enter the exit price here to close it.</td></tr>`;
+  } else {
+    body.innerHTML = trades.map((t) => {
+      const closed = t.status === "closed";
+      const pill = closed ? `<span class="pill ${t.pnl > 0 ? "win" : "loss"}">${t.pnl > 0 ? "win" : "loss"}</span>`
+        : `<div class="closer"><input type="number" step="0.01" id="exit-${t.id}" placeholder="exit $" aria-label="Exit price for ${t.symbol}"><button type="button" data-close="${t.id}">Close</button></div>`;
+      return `<tr><td>${t.opened}</td><td><b>${t.symbol}</b></td><td class="num">${t.shares}</td>
+        <td class="num">${(+t.entry).toFixed(2)}</td><td class="num">${(+t.stop).toFixed(2)}</td><td class="num">${(+t.target).toFixed(2)}</td>
+        <td>${pill}</td><td class="num ${closed ? (t.pnl >= 0 ? "pos" : "neg") : ""}">${closed ? signed(t.pnl, t.currency) : "open"}</td>
+        <td style="white-space:normal;min-width:160px">${escapeHtml(t.reason || "")}</td></tr>`;
+    }).join("");
+  }
+  const closed = trades.filter((t) => t.status === "closed");
+  const wins = closed.filter((t) => t.pnl > 0), losses = closed.filter((t) => t.pnl <= 0);
+  const avg = (a) => a.length ? a.reduce((s, t) => s + t.pnl, 0) / a.length : 0;
+  const total = closed.reduce((s, t) => s + t.pnl, 0);
+  const stat = (label, value, cls = "") => `<div class="stat"><span>${label}</span><b class="${cls}">${value}</b></div>`;
+  $("journalStats").innerHTML = [
+    stat("Closed trades", closed.length + " <span class='hint'>/ " + (trades.length - closed.length) + " open</span>"),
+    stat("Win rate", closed.length ? Math.round(wins.length / closed.length * 100) + "%" : "–"),
+    stat("Total P&L", closed.length ? signed(total) : "–", total >= 0 ? "pos" : "neg"),
+    stat("Average win", wins.length ? money(avg(wins)) : "–", "pos"),
+    stat("Average loss", losses.length ? money(avg(losses)) : "–", "neg"),
+    stat("Ready for real money?", closed.length < 10 ? "Not yet (" + closed.length + "/10)" : avg(wins) * wins.length > -avg(losses) * losses.length ? "Maybe: you're net positive" : "No: net negative",
+      closed.length >= 10 && total > 0 ? "pos" : ""),
+  ].join("");
+}
+function escapeHtml(s) { return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+(async () => {
+  try { db = await window.claude?.use?.("db"); } catch { db = null; }
+  if (!db) { $("saveBtn").disabled = true; $("saveStatus").textContent = "Saving paper trades isn't available in this view."; renderJournal(); return; }
+  db.collection("trades").orderBy("createdAt", "desc").onSnapshot(
+    (snap) => { trades = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderJournal(); },
+    (e) => { $("saveStatus").textContent = "The journal stopped updating (" + e.code + "). Reload the page."; }
+  );
+  renderJournal();
+})();
+
+$("saveBtn").addEventListener("click", async () => {
+  const r = compute(), st = $("saveStatus");
+  if (!db || !r.valid || !r.shares) { st.textContent = "Fix the plan first: it needs valid prices and at least one share."; return; }
+  $("saveBtn").disabled = true;
+  try {
+    await db.collection("trades").add({
+      symbol: $("symbol").value.trim().toUpperCase(), currency: r.cur,
+      entry: r.entry, stop: r.stop, target: r.target, shares: r.shares,
+      reason: $("reason").value.trim(), status: "open",
+      opened: new Date().toISOString().slice(0, 10), createdAt: Date.now(),
+    });
+    st.textContent = "Saved. Check back when the price reaches your stop or target, then close it below.";
+    $("reason").value = "";
+  } catch (e) {
+    st.textContent = e.code === "quota_exceeded" ? "The journal is full. Delete old trades to add more." :
+      e.code === "invalid_argument" ? "You can view this journal but not add to it." : "Couldn't save (" + (e.code || e.message) + "). Try again.";
+  } finally { $("saveBtn").disabled = false; }
+});
+
+$("journal").addEventListener("click", async (ev) => {
+  const id = ev.target?.dataset?.close;
+  if (!id || !db) return;
+  const t = trades.find((x) => x.id === id);
+  const exit = parseFloat($("exit-" + id).value);
+  if (!t || !(exit > 0)) { $("exit-" + id).focus(); return; }
+  ev.target.disabled = true;
+  try {
+    await db.doc("trades/" + id).update({ status: "closed", exit, pnl: Math.round((exit - t.entry) * t.shares * 100) / 100, closed: new Date().toISOString().slice(0, 10) });
+  } catch (e) { ev.target.disabled = false; $("saveStatus").textContent = "Couldn't close the trade (" + (e.code || e.message) + ")."; }
+});
+
+$("ticket").addEventListener("input", render);
+$("ticket").addEventListener("submit", (e) => e.preventDefault());
+render();
+renderJournal();
+</script>
